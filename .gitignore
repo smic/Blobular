@@ -6,3 +6,7 @@ build
 *.pbxuser
 *.mode1v3
 .DS_Store
+Blobular.xcodeproj/stephan.perspectivev3
+Blobular.xcodeproj/xcuserdata/stephan.xcuserdatad/xcschemes/Blobular.xcscheme
+Blobular.xcodeproj/xcuserdata/stephan.xcuserdatad/xcschemes/xcschememanagement.plist
+Blobular.xcodeproj/project.xcworkspace/xcuserdata/stephan.xcuserdatad/UserInterfaceState.xcuserstate
