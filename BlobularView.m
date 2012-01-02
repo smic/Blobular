@@ -105,35 +105,25 @@
 	NSColor* fillColor = [NSColor colorWithDeviceRed:152.0/255.0 green:180.0/255.0 blue:227.0/255.0 alpha:1.0];
 	NSColor* strokeColor = [[NSColor whiteColor] colorWithAlphaComponent:0.6];
 	
-	/*for(int i=0; i<point_count; i++) {
-		NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(circles[i].x-radii[i], circles[i].y-radii[i], 2*radii[i], 2*radii[i])];
-		[[NSColor redColor] set];
-		[path fill];
-		[[NSColor blackColor] set];
-		[path stroke];
-	}*/
-	
-	for(NSUInteger i = 0; i < [self.blobs count]; i++) {
-		Blob *blob1 = [self.blobs objectAtIndex:i];
+	for(NSUInteger blobIndex1 = 0; blobIndex1 < [self.blobs count]; blobIndex1++) {
+		Blob *blob1 = [self.blobs objectAtIndex:blobIndex1];
 		
 		// test if circle is connected to other circles
 		BOOL connected = NO;		
-		for(NSUInteger j = 0; j < [self.blobs count]; j++) {
-			Blob *blob2 = [self.blobs objectAtIndex:j];
-			if (i != j && 
+		for(NSUInteger blobIndex2 = 0; blobIndex2 < [self.blobs count]; blobIndex2++) {
+			Blob *blob2 = [self.blobs objectAtIndex:blobIndex2];
+			if (blobIndex1 != blobIndex2 && 
                 distanceOf(blob1.center, blob2.center) < blob1.radius + blob2.radius + 2 * self.probeRadius &&
-                distanceOf(blob1.center, blob2.center) > abs(blob1.radius - blob2.radius)) {
+                distanceOf(blob1.center, blob2.center) > fabs(blob1.radius - blob2.radius)) {
 				connected = YES;
 			}
 		}
 	
-		for(NSUInteger j = i+1; j < [self.blobs count]; j++) {
-			/*[[NSColor blackColor] set];
-			[NSBezierPath strokeLineFromPoint:circles[i] toPoint:circles[j]];*/
-			Blob *blob2 = [self.blobs objectAtIndex:j];
+		for(NSUInteger blobIndex2 = blobIndex1 + 1; blobIndex2 < [self.blobs count]; blobIndex2++) {
+			Blob *blob2 = [self.blobs objectAtIndex:blobIndex2];
 		
 			NSPoint c1, c2;
-			if (distanceOf(blob1.center, blob2.center) > abs(blob1.radius - blob2.radius) &&
+			if (distanceOf(blob1.center, blob2.center) > fabs(blob1.radius - blob2.radius) &&
                 circle_circle_intersection(blob1.center, blob1.radius + self.probeRadius, blob2.center, blob2.radius + self.probeRadius, &c1, &c2)
             /* && projection_on_segment(circles[i], circles[j], c1)*/) {
 			
@@ -144,6 +134,7 @@
 				[NSBezierPath strokeLineFromPoint:blob1.center toPoint:blob2.center];
 				[NSGraphicsContext restoreGraphicsState];
 	
+                // show probe circles for debugging purposes
 				if (self.showProbes) {
 					NSBezierPath* probePath = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(c1.x - self.probeRadius, 
                                                                                                 c1.y - self.probeRadius, 
@@ -158,13 +149,15 @@
                                                                                   2.0f * self.probeRadius)];
 					[[NSColor redColor] set];
 					[probePath stroke];
+                    
+                    [NSBezierPath strokeLineFromPoint:blob1.center toPoint:c1];
+                    [NSBezierPath strokeLineFromPoint:blob2.center toPoint:c1];
+                    [NSBezierPath strokeLineFromPoint:blob1.center toPoint:c2];
+                    [NSBezierPath strokeLineFromPoint:blob2.center toPoint:c2];
 				}
 		
-				/*[NSBezierPath strokeLineFromPoint:circles[0] toPoint:c1];
-				[NSBezierPath strokeLineFromPoint:circles[1] toPoint:c1];
-				[NSBezierPath strokeLineFromPoint:circles[0] toPoint:c2];
-				[NSBezierPath strokeLineFromPoint:circles[1] toPoint:c2];*/
 		
+                // determine various angles for the calculate the arc segments
 				float angle1 = angle(c1, blob1.center);
 				float angle2 = angle(c1, blob2.center);
 				float angle3 = angle(c2, blob1.center);
@@ -218,8 +211,8 @@
                                                   clockwise:YES];
 					[path closePath];
 				} else {
-					//NSLog(@"angle1=%f angle2=%f angle3=%f angle4=%f", angle1, angle2, angle3, angle4);
 				
+                    // draw one single shape by connecting the various arc segments
 					[path appendBezierPathWithArcWithCenter:blob1.center 
                                                      radius:blob1.radius 
                                                  startAngle:rotate_angle(angle1) 
@@ -259,7 +252,10 @@
 		
 		// if the circle is not connected draw a single circle
 		if (!connected) {
-			NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(blob1.center.x-blob1.radius, blob1.center.y-blob1.radius, 2*blob1.radius, 2*blob1.radius)];
+			NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(blob1.center.x - blob1.radius, 
+                                                                                   blob1.center.y - blob1.radius, 
+                                                                                   2.0f * blob1.radius, 
+                                                                                   2.0f * blob1.radius)];
 		
 			[fillColor set];
 			[path fill];
