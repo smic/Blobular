@@ -8,21 +8,12 @@
 
 #import <Cocoa/Cocoa.h>
 
-typedef struct {
-	NSPoint center;
-	float radius;
-} BlobCircle;
 
-@interface BlobularView : NSView {
-	int circle_count;
-	BlobCircle circles[3];
-	
-	float probe_radius;
-	
-	BOOL showProbes;
-}
+@interface BlobularView : NSView
 
-@property BOOL showProbes;
+@property (nonatomic, retain) NSArray *blobs;
+@property (nonatomic, assign) CGFloat probeRadius;
+@property (nonatomic, assign) BOOL showProbes;
 
 @end
 

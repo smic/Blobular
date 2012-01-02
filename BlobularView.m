@@ -7,24 +7,26 @@
 //
 
 #import "BlobularView.h"
+#import "Blob.h"
 #import "Geometry.h"
 
 
 @implementation BlobularView
 
-@synthesize showProbes;
+@synthesize blobs = _blobs;
+@synthesize probeRadius = _probeRadius;
+@synthesize showProbes = _showProbes;
 
 - (id)initWithFrame:(NSRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-		circle_count = 3;
-		circles[0].center = NSMakePoint(200, 200); circles[0].radius = 50;
-		circles[1].center = NSMakePoint(400, 200); circles[1].radius = 25;
-		circles[2].center = NSMakePoint(300, 50); circles[2].radius = 35;
+        Blob *blob1 = [[[Blob alloc] initWithCenter:NSMakePoint(150.0f, 120.0f) radius:50.0f] autorelease];
+        Blob *blob2 = [[[Blob alloc] initWithCenter:NSMakePoint(300.0f, 200.0f) radius:25.0f] autorelease];
+        self.blobs = [NSArray arrayWithObjects:blob1, blob2, nil];
 		
-		probe_radius = 100;
+		self.probeRadius = 100.0f;
 		
-		showProbes = NO;
+		self.showProbes = NO;
 		
 		NSTrackingArea *trackingArea = [[[NSTrackingArea alloc] initWithRect:frame
 													options: (NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingActiveInKeyWindow )
@@ -34,13 +36,14 @@
     return self;
 }
 
-- (int)circleUnderPoint:(NSPoint)point {
-	int selectedPoint = -1;
-	for(int i=0; i<circle_count; i++) {
-		float dx = circles[i].center.x-point.x;
-		float dy = circles[i].center.y-point.y;
-		float radius = hypot(dx, dy);
-		if (radius<=circles[i].radius) {
+- (NSUInteger)blobUnderPoint:(NSPoint)point {
+	NSUInteger selectedPoint = NSNotFound;
+	for(NSUInteger i = 0; i < [self.blobs count]; i++) {
+        Blob *blob = [self.blobs objectAtIndex:i];
+		CGFloat dx = blob.center.x - point.x;
+		CGFloat dy = blob.center.y - point.y;
+		CGFloat radius = hypotf(dx, dy);
+		if (radius <= blob.radius) {
 			selectedPoint = i;
 			break;
 		}
@@ -50,8 +53,9 @@
 
 - (void)mouseDown:(NSEvent *)event {
 	NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-	int selectedPoint = [self circleUnderPoint:point];
-	if (selectedPoint<0) return;
+	NSUInteger selectedBlobIndex = [self blobUnderPoint:point];
+	if (selectedBlobIndex == NSNotFound) return;
+    Blob *selectedBlob = [self.blobs objectAtIndex:selectedBlobIndex];
 	
 	[[NSCursor closedHandCursor] set];
 	NSRect bounds = self.bounds;
@@ -60,9 +64,9 @@
 		NSPoint currentPoint = [self convertPoint:[event locationInWindow] fromView:nil];
 		currentPoint.x = fminf(fmaxf(currentPoint.x, bounds.origin.x), bounds.size.width);
 		currentPoint.y = fminf(fmaxf(currentPoint.y, bounds.origin.y), bounds.size.height);
-	
-		circles[selectedPoint].center.x += currentPoint.x-point.x;
-		circles[selectedPoint].center.y += currentPoint.y-point.y;
+
+        selectedBlob.center = NSMakePoint(selectedBlob.center.x + currentPoint.x - point.x, 
+                                          selectedBlob.center.y + currentPoint.y - point.y);
 		point = currentPoint;
 		self.needsDisplay = YES;
 	}
@@ -71,8 +75,8 @@
 
 - (void)mouseMoved:(NSEvent *)event {
 	NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-	int selectedPoint = [self circleUnderPoint:point];
-	if (selectedPoint<0) {
+	NSUInteger selectedBlobIndex = [self blobUnderPoint:point];
+	if (selectedBlobIndex == NSNotFound) {
 		[[NSCursor arrowCursor] set];
 	} else {
 		[[NSCursor openHandCursor] set];
@@ -109,39 +113,49 @@
 		[path stroke];
 	}*/
 	
-	for(int i=0; i<circle_count; i++) {
-		BlobCircle circle1 = circles[i];
+	for(NSUInteger i = 0; i < [self.blobs count]; i++) {
+		Blob *blob1 = [self.blobs objectAtIndex:i];
 		
 		// test if circle is connected to other circles
 		BOOL connected = NO;		
-		for(int j=0; j<circle_count; j++) {
-			BlobCircle circle2 = circles[j];
-			if (i!=j && distanceOf(circle1.center, circle2.center)<circle1.radius+circle2.radius+2*probe_radius && distanceOf(circle1.center, circle2.center)>abs(circle1.radius-circle2.radius)) {
+		for(NSUInteger j = 0; j < [self.blobs count]; j++) {
+			Blob *blob2 = [self.blobs objectAtIndex:j];
+			if (i != j && 
+                distanceOf(blob1.center, blob2.center) < blob1.radius + blob2.radius + 2 * self.probeRadius &&
+                distanceOf(blob1.center, blob2.center) > abs(blob1.radius - blob2.radius)) {
 				connected = YES;
 			}
 		}
 	
-		for(int j=i+1; j<circle_count; j++) {
+		for(NSUInteger j = i+1; j < [self.blobs count]; j++) {
 			/*[[NSColor blackColor] set];
 			[NSBezierPath strokeLineFromPoint:circles[i] toPoint:circles[j]];*/
-			BlobCircle circle2 = circles[j];
+			Blob *blob2 = [self.blobs objectAtIndex:j];
 		
 			NSPoint c1, c2;
-			if (distanceOf(circle1.center, circle2.center)>abs(circle1.radius-circle2.radius) && circle_circle_intersection(circle1.center, circle1.radius+probe_radius, circle2.center, circle2.radius+probe_radius, &c1, &c2)/* && projection_on_segment(circles[i], circles[j], c1)*/) {
+			if (distanceOf(blob1.center, blob2.center) > abs(blob1.radius - blob2.radius) &&
+                circle_circle_intersection(blob1.center, blob1.radius + self.probeRadius, blob2.center, blob2.radius + self.probeRadius, &c1, &c2)
+            /* && projection_on_segment(circles[i], circles[j], c1)*/) {
 			
 				// draw line between circles
 				[NSGraphicsContext saveGraphicsState];		
 				[shadow set];
 				[strokeColor set];
-				[NSBezierPath strokeLineFromPoint:circle1.center toPoint:circle2.center];
+				[NSBezierPath strokeLineFromPoint:blob1.center toPoint:blob2.center];
 				[NSGraphicsContext restoreGraphicsState];
 	
-				if (showProbes) {
-					NSBezierPath* probePath = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(c1.x-probe_radius, c1.y-probe_radius, 2*probe_radius, 2*probe_radius)];
+				if (self.showProbes) {
+					NSBezierPath* probePath = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(c1.x - self.probeRadius, 
+                                                                                                c1.y - self.probeRadius, 
+                                                                                                2.0f * self.probeRadius, 
+                                                                                                2.0f * self.probeRadius)];
 					[[NSColor redColor] set];
 					[probePath stroke];
 		
-					probePath = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(c2.x-probe_radius, c2.y-probe_radius, 2*probe_radius, 2*probe_radius)];
+					probePath = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(c2.x - self.probeRadius, 
+                                                                                  c2.y - self.probeRadius, 
+                                                                                  2.0f * self.probeRadius, 
+                                                                                  2.0f * self.probeRadius)];
 					[[NSColor redColor] set];
 					[probePath stroke];
 				}
@@ -151,16 +165,17 @@
 				[NSBezierPath strokeLineFromPoint:circles[0] toPoint:c2];
 				[NSBezierPath strokeLineFromPoint:circles[1] toPoint:c2];*/
 		
-				float angle1 = angle(c1, circle1.center);
-				float angle2 = angle(c1, circle2.center);
-				float angle3 = angle(c2, circle1.center);
-				float angle4 = angle(c2, circle2.center);
+				float angle1 = angle(c1, blob1.center);
+				float angle2 = angle(c1, blob2.center);
+				float angle3 = angle(c2, blob1.center);
+				float angle4 = angle(c2, blob2.center);
 				
 				NSBezierPath* path = [NSBezierPath bezierPath];
 		
 				// test if the connecting shape cut the middle line
 				NSPoint m1, m2;
-				if (distanceOf(circle1.center, circle2.center)>circle1.radius+circle2.radius && circle_circle_intersection(c2, probe_radius, c1, probe_radius, &m1, &m2)) {
+				if (distanceOf(blob1.center, blob2.center) > blob1.radius + blob2.radius && 
+                    circle_circle_intersection(c2, self.probeRadius, c1, self.probeRadius, &m1, &m2)) {
 					// draw two shapes, because the connecting shape intersects with the middle line 
 					float angle5 = angle(c1, m1);
 					float angle6 = angle(c1, m2);
@@ -168,23 +183,63 @@
 					float angle8 = angle(c2, m2);
 					
 					// draw two shapes
-					[path appendBezierPathWithArcWithCenter:c1 radius:probe_radius startAngle:angle5 endAngle:angle1 clockwise:YES];
-					[path appendBezierPathWithArcWithCenter:circle1.center radius:circle1.radius startAngle:rotate_angle(angle1) endAngle:rotate_angle(angle3) clockwise:NO];
-					[path appendBezierPathWithArcWithCenter:c2 radius:probe_radius startAngle:angle3 endAngle:angle7 clockwise:YES];
+					[path appendBezierPathWithArcWithCenter:c1 
+                                                     radius:self.probeRadius 
+                                                 startAngle:angle5 
+                                                   endAngle:angle1 
+                                                  clockwise:YES];
+					[path appendBezierPathWithArcWithCenter:blob1.center 
+                                                     radius:blob1.radius 
+                                                 startAngle:rotate_angle(angle1) 
+                                                   endAngle:rotate_angle(angle3) 
+                                                  clockwise:NO];
+					[path appendBezierPathWithArcWithCenter:c2 
+                                                     radius:self.probeRadius 
+                                                 startAngle:angle3 
+                                                   endAngle:angle7 
+                                                  clockwise:YES];
 					[path closePath];
 					
 					[path moveToPoint:m2];
-					[path appendBezierPathWithArcWithCenter:c2 radius:probe_radius startAngle:angle8 endAngle:angle4 clockwise:YES];
-					[path appendBezierPathWithArcWithCenter:circle2.center radius:circle2.radius startAngle:rotate_angle(angle4) endAngle:rotate_angle(angle2) clockwise:NO];
-					[path appendBezierPathWithArcWithCenter:c1 radius:probe_radius startAngle:angle2 endAngle:angle6 clockwise:YES];
+					[path appendBezierPathWithArcWithCenter:c2 
+                                                     radius:self.probeRadius 
+                                                 startAngle:angle8 
+                                                   endAngle:angle4 
+                                                  clockwise:YES];
+					[path appendBezierPathWithArcWithCenter:blob2.center 
+                                                     radius:blob2.radius 
+                                                 startAngle:rotate_angle(angle4) 
+                                                   endAngle:rotate_angle(angle2) 
+                                                  clockwise:NO];
+					[path appendBezierPathWithArcWithCenter:c1 
+                                                     radius:self.probeRadius 
+                                                 startAngle:angle2 
+                                                   endAngle:angle6 
+                                                  clockwise:YES];
 					[path closePath];
 				} else {
 					//NSLog(@"angle1=%f angle2=%f angle3=%f angle4=%f", angle1, angle2, angle3, angle4);
 				
-					[path appendBezierPathWithArcWithCenter:circle1.center radius:circle1.radius startAngle:rotate_angle(angle1) endAngle:rotate_angle(angle3) clockwise:NO];
-					[path appendBezierPathWithArcWithCenter:c2 radius:probe_radius startAngle:angle3 endAngle:angle4 clockwise:YES];
-					[path appendBezierPathWithArcWithCenter:circle2.center radius:circle2.radius startAngle:rotate_angle(angle4) endAngle:rotate_angle(angle2) clockwise:NO];
-					[path appendBezierPathWithArcWithCenter:c1 radius:probe_radius startAngle:angle2 endAngle:angle1 clockwise:YES];
+					[path appendBezierPathWithArcWithCenter:blob1.center 
+                                                     radius:blob1.radius 
+                                                 startAngle:rotate_angle(angle1) 
+                                                   endAngle:rotate_angle(angle3) 
+                                                  clockwise:NO];
+					[path appendBezierPathWithArcWithCenter:c2 
+                                                     radius:self.probeRadius 
+                                                 startAngle:angle3 
+                                                   endAngle:angle4 
+                                                  clockwise:YES];
+					[path appendBezierPathWithArcWithCenter:blob2.center 
+                                                     radius:blob2.radius 
+                                                 startAngle:rotate_angle(angle4) 
+                                                   endAngle:rotate_angle(angle2) 
+                                                  clockwise:NO];
+					[path appendBezierPathWithArcWithCenter:c1 
+                                                     radius:self.probeRadius 
+                                                 startAngle:angle2 
+                                                   endAngle:angle1 
+                                                  clockwise:YES];
 					[path closePath];
 				}
 				
@@ -204,7 +259,7 @@
 		
 		// if the circle is not connected draw a single circle
 		if (!connected) {
-			NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(circle1.center.x-circle1.radius, circle1.center.y-circle1.radius, 2*circle1.radius, 2*circle1.radius)];
+			NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(blob1.center.x-blob1.radius, blob1.center.y-blob1.radius, 2*blob1.radius, 2*blob1.radius)];
 		
 			[fillColor set];
 			[path fill];
