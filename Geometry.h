@@ -9,16 +9,16 @@
 #import <Cocoa/Cocoa.h>
 
 
-double distanceOf(NSPoint p0, NSPoint p1);
+CGFloat distanceOf(NSPoint p0, NSPoint p1);
 
-float angle(NSPoint p0, NSPoint p1);
+double angle(NSPoint p0, NSPoint p1);
 
-float to_radians(float angle);
+double to_radians(double angle);
 
-float discriminate_angle(float angle);
+double discriminate_angle(double angle);
 
-float rotate_angle(float angle);
+double rotate_angle(double angle);
 
-int circle_circle_intersection(NSPoint p0, float r0,
-                               NSPoint p1, float r1,
-                               NSPoint *pi, NSPoint *pi_prime);
+BOOL circle_circle_intersection(NSPoint p0, CGFloat r0,
+                                NSPoint p1, CGFloat r1,
+                                NSPoint *pi, NSPoint *pi_prime);
