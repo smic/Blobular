@@ -3,7 +3,7 @@
 //  Blobular
 //
 //  Created by Stephan Michels on 14.11.08.
-//  Copyright 2008 __MyCompanyName__. All rights reserved.
+//  Copyright 2012 Stephan Michels Softwareentwicklung und Beratung. All rights reserved.
 //
 
 #import "BlobularView.h"

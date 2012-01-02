@@ -3,7 +3,7 @@
 //  Blobular
 //
 //  Created by Stephan Michels on 25.06.09.
-//  Copyright 2009 Beilstein Institut. All rights reserved.
+//  Copyright 2012 Stephan Michels Softwareentwicklung und Beratung. All rights reserved.
 //
 
 #import "Geometry.h"
