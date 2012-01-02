@@ -10,8 +10,10 @@
 #import "BlobularView.h"
 
 
-@interface BlobularAppController : NSObject {
-	IBOutlet BlobularView *view;
-}
+@interface BlobularAppController : NSObject <NSApplicationDelegate>
+
+@property (nonatomic, retain) IBOutlet BlobularView *view;
+@property (nonatomic, retain) IBOutlet NSMenuItem *probeSizeMenuItem;
+@property (nonatomic, retain) IBOutlet NSView *probeSizeView;
 
 @end

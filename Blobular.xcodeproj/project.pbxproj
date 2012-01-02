@@ -53,14 +53,14 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				D40008C60FF2AECC009081A4 /* BlobularView.h */,
-				D40008C70FF2AECC009081A4 /* BlobularView.m */,
 				D45F440114B1903B001D35CF /* Blob.h */,
 				D45F440214B1903B001D35CF /* Blob.m */,
-				D40008C00FF2AE7D009081A4 /* BlobularAppController.h */,
-				D40008C10FF2AE7D009081A4 /* BlobularAppController.m */,
+				D40008C60FF2AECC009081A4 /* BlobularView.h */,
+				D40008C70FF2AECC009081A4 /* BlobularView.m */,
 				D40008CF0FF3C98A009081A4 /* Geometry.h */,
 				D40008D00FF3C98A009081A4 /* Geometry.m */,
+				D40008C00FF2AE7D009081A4 /* BlobularAppController.h */,
+				D40008C10FF2AE7D009081A4 /* BlobularAppController.m */,
 			);
 			name = Classes;
 			sourceTree = "<group>";

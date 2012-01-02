@@ -11,11 +11,15 @@
 #import "Geometry.h"
 
 
+static char BlobularViewObservationContext;
+
 @implementation BlobularView
 
 @synthesize blobs = _blobs;
 @synthesize probeRadius = _probeRadius;
 @synthesize showProbes = _showProbes;
+
+#pragma mark - Initialization / Deallocation
 
 - (id)initWithFrame:(NSRect)frame {
     self = [super initWithFrame:frame];
@@ -32,9 +36,33 @@
 													options: (NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingActiveInKeyWindow )
 													  owner:self userInfo:nil] autorelease];
 		[self addTrackingArea:trackingArea];
+        
+        [self addObserver:self 
+               forKeyPath:@"probeRadius" 
+                  options:(NSKeyValueObservingOptionNew) 
+                  context:&BlobularViewObservationContext];
+        [self addObserver:self 
+               forKeyPath:@"showProbes" 
+                  options:(NSKeyValueObservingOptionNew) 
+                  context:&BlobularViewObservationContext];
     }
     return self;
 }
+
+- (void)dealloc {
+    [self removeObserver:self 
+              forKeyPath:@"probeRadius" 
+                 context:&BlobularViewObservationContext];
+    [self removeObserver:self 
+              forKeyPath:@"showProbes" 
+                 context:&BlobularViewObservationContext];
+    
+    self.blobs = nil;
+    
+    [super dealloc];
+}
+
+#pragma mark - User interaction
 
 - (NSUInteger)blobUnderPoint:(NSPoint)point {
 	NSUInteger selectedPoint = NSNotFound;
@@ -90,6 +118,8 @@
 - (void)mouseExited:(NSEvent *)event {
 	[NSCursor pop];
 }
+
+#pragma mark - Drawing
 
 - (void)drawRect:(NSRect)rect {
 
@@ -268,6 +298,29 @@
 			[NSGraphicsContext restoreGraphicsState];
 		}
 	}
+}
+
+#pragma mark - KVO
+
+-(void)observeValueForKeyPath:(NSString *)keyPath 
+                     ofObject:(id)object 
+                       change:(NSDictionary *)change 
+                      context:(void *)context {
+    if (context != &BlobularViewObservationContext) {
+        [super observeValueForKeyPath:keyPath 
+                             ofObject:object 
+                               change:change 
+                              context:context];
+        return;
+    }
+    
+    NSLog(@"keyPath: %@, value: %f", keyPath, self.probeRadius);
+    
+    if ([keyPath isEqualToString:@"probeRadius"]) {
+        [self setNeedsDisplay:YES];
+    } else if ([keyPath isEqualToString:@"showProbes"]) {
+        [self setNeedsDisplay:YES];
+    }
 }
 
 @end

@@ -8,13 +8,6 @@
 
 #import "Blob.h"
 
-/*@interface Blob () {
-@private
-    NSPoint _center;
-    CGFloat _radius;
-}
-
-@end*/
 
 @implementation Blob 
 

@@ -8,6 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+
 @interface Blob : NSObject
 
 @property (nonatomic, assign) NSPoint center;
