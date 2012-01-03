@@ -154,16 +154,8 @@ static char BlobularViewObservationContext;
 		
 			NSPoint c1, c2;
 			if (distanceOf(blob1.center, blob2.center) > fabs(blob1.radius - blob2.radius) &&
-                circle_circle_intersection(blob1.center, blob1.radius + self.probeRadius, blob2.center, blob2.radius + self.probeRadius, &c1, &c2)
-            /* && projection_on_segment(circles[i], circles[j], c1)*/) {
-			
-				// draw line between circles
-				[NSGraphicsContext saveGraphicsState];		
-				[shadow set];
-				[strokeColor set];
-				[NSBezierPath strokeLineFromPoint:blob1.center toPoint:blob2.center];
-				[NSGraphicsContext restoreGraphicsState];
-	
+                circle_circle_intersection(blob1.center, blob1.radius + self.probeRadius, blob2.center, blob2.radius + self.probeRadius, &c1, &c2)) {
+				
                 // show probe circles for debugging purposes
 				if (self.showProbes) {
 					NSBezierPath* probePath = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(c1.x - self.probeRadius, 
@@ -179,6 +171,9 @@ static char BlobularViewObservationContext;
                                                                                   2.0f * self.probeRadius)];
 					[[NSColor redColor] set];
 					[probePath stroke];
+                    
+                    // draw line between circles
+                    [NSBezierPath strokeLineFromPoint:blob1.center toPoint:blob2.center];
                     
                     [NSBezierPath strokeLineFromPoint:blob1.center toPoint:c1];
                     [NSBezierPath strokeLineFromPoint:blob2.center toPoint:c1];
