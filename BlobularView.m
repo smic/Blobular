@@ -134,66 +134,75 @@ static char BlobularViewObservationContext;
 	
 	NSColor* fillColor = [NSColor colorWithDeviceRed:152.0/255.0 green:180.0/255.0 blue:227.0/255.0 alpha:1.0];
 	NSColor* strokeColor = [[NSColor whiteColor] colorWithAlphaComponent:0.6];
+    
+    CGFloat rp = self.probeRadius;
 	
 	for(NSUInteger blobIndex1 = 0; blobIndex1 < [self.blobs count]; blobIndex1++) {
 		Blob *blob1 = [self.blobs objectAtIndex:blobIndex1];
+        NSPoint b1 = blob1.center;
+        CGFloat r1 = blob1.radius;
 		
 		// test if circle is connected to other circles
 		BOOL connected = NO;		
 		for(NSUInteger blobIndex2 = 0; blobIndex2 < [self.blobs count]; blobIndex2++) {
 			Blob *blob2 = [self.blobs objectAtIndex:blobIndex2];
+            NSPoint b2 = blob2.center;
+            CGFloat r2 = blob2.radius;
+            
 			if (blobIndex1 != blobIndex2 && 
-                distanceOf(blob1.center, blob2.center) < blob1.radius + blob2.radius + 2 * self.probeRadius &&
-                distanceOf(blob1.center, blob2.center) > fabs(blob1.radius - blob2.radius)) {
+                distanceOf(b1, b2) < r1 + r2 + 2 * rp &&
+                distanceOf(b1, b2) > fabs(r1 - r2)) {
 				connected = YES;
 			}
 		}
 	
 		for(NSUInteger blobIndex2 = blobIndex1 + 1; blobIndex2 < [self.blobs count]; blobIndex2++) {
 			Blob *blob2 = [self.blobs objectAtIndex:blobIndex2];
+            NSPoint b2 = blob2.center;
+            CGFloat r2 = blob2.radius;
 		
 			NSPoint c1, c2;
-			if (distanceOf(blob1.center, blob2.center) > fabs(blob1.radius - blob2.radius) &&
-                circle_circle_intersection(blob1.center, blob1.radius + self.probeRadius, blob2.center, blob2.radius + self.probeRadius, &c1, &c2)) {
+			if (distanceOf(b1, b2) > fabs(r1 - r2) &&
+                circle_circle_intersection(b1, r1 + rp, b2, r2 + rp, &c1, &c2)) {
 				
                 // show probe circles for debugging purposes
 				if (self.showProbes) {
-					NSBezierPath* probePath = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(c1.x - self.probeRadius, 
-                                                                                                c1.y - self.probeRadius, 
-                                                                                                2.0f * self.probeRadius, 
-                                                                                                2.0f * self.probeRadius)];
+					NSBezierPath* probePath = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(c1.x - rp, 
+                                                                                                c1.y - rp, 
+                                                                                                2.0f * rp, 
+                                                                                                2.0f * rp)];
 					[[NSColor redColor] set];
 					[probePath stroke];
 		
-					probePath = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(c2.x - self.probeRadius, 
-                                                                                  c2.y - self.probeRadius, 
-                                                                                  2.0f * self.probeRadius, 
-                                                                                  2.0f * self.probeRadius)];
+					probePath = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(c2.x - rp, 
+                                                                                  c2.y - rp, 
+                                                                                  2.0f * rp, 
+                                                                                  2.0f * rp)];
 					[[NSColor redColor] set];
 					[probePath stroke];
                     
                     // draw line between circles
-                    [NSBezierPath strokeLineFromPoint:blob1.center toPoint:blob2.center];
+                    [NSBezierPath strokeLineFromPoint:b1 toPoint:b2];
                     
-                    [NSBezierPath strokeLineFromPoint:blob1.center toPoint:c1];
-                    [NSBezierPath strokeLineFromPoint:blob2.center toPoint:c1];
-                    [NSBezierPath strokeLineFromPoint:blob1.center toPoint:c2];
-                    [NSBezierPath strokeLineFromPoint:blob2.center toPoint:c2];
+                    [NSBezierPath strokeLineFromPoint:b1 toPoint:c1];
+                    [NSBezierPath strokeLineFromPoint:b2 toPoint:c1];
+                    [NSBezierPath strokeLineFromPoint:b1 toPoint:c2];
+                    [NSBezierPath strokeLineFromPoint:b2 toPoint:c2];
 				}
 		
 		
                 // determine various angles for the calculate the arc segments
-				float angle1 = angle(c1, blob1.center);
-				float angle2 = angle(c1, blob2.center);
-				float angle3 = angle(c2, blob1.center);
-				float angle4 = angle(c2, blob2.center);
+				float angle1 = angle(c1, b1);
+				float angle2 = angle(c1, b2);
+				float angle3 = angle(c2, b1);
+				float angle4 = angle(c2, b2);
 				
 				NSBezierPath* path = [NSBezierPath bezierPath];
 		
 				// test if the connecting shape cut the middle line
 				NSPoint m1, m2;
-				if (distanceOf(blob1.center, blob2.center) > blob1.radius + blob2.radius && 
-                    circle_circle_intersection(c2, self.probeRadius, c1, self.probeRadius, &m1, &m2)) {
+				if (distanceOf(b1, b2) > r1 + r2 && 
+                    circle_circle_intersection(c2, rp, c1, rp, &m1, &m2)) {
 					// draw two shapes, because the connecting shape intersects with the middle line 
 					float angle5 = angle(c1, m1);
 					float angle6 = angle(c1, m2);
@@ -202,17 +211,17 @@ static char BlobularViewObservationContext;
 					
 					// draw two shapes
 					[path appendBezierPathWithArcWithCenter:c1 
-                                                     radius:self.probeRadius 
+                                                     radius:rp 
                                                  startAngle:angle5 
                                                    endAngle:angle1 
                                                   clockwise:YES];
-					[path appendBezierPathWithArcWithCenter:blob1.center 
-                                                     radius:blob1.radius 
+					[path appendBezierPathWithArcWithCenter:b1 
+                                                     radius:r1 
                                                  startAngle:rotate_angle(angle1) 
                                                    endAngle:rotate_angle(angle3) 
                                                   clockwise:NO];
 					[path appendBezierPathWithArcWithCenter:c2 
-                                                     radius:self.probeRadius 
+                                                     radius:rp 
                                                  startAngle:angle3 
                                                    endAngle:angle7 
                                                   clockwise:YES];
@@ -220,17 +229,17 @@ static char BlobularViewObservationContext;
 					
 					[path moveToPoint:m2];
 					[path appendBezierPathWithArcWithCenter:c2 
-                                                     radius:self.probeRadius 
+                                                     radius:rp 
                                                  startAngle:angle8 
                                                    endAngle:angle4 
                                                   clockwise:YES];
-					[path appendBezierPathWithArcWithCenter:blob2.center 
-                                                     radius:blob2.radius 
+					[path appendBezierPathWithArcWithCenter:b2 
+                                                     radius:r2 
                                                  startAngle:rotate_angle(angle4) 
                                                    endAngle:rotate_angle(angle2) 
                                                   clockwise:NO];
 					[path appendBezierPathWithArcWithCenter:c1 
-                                                     radius:self.probeRadius 
+                                                     radius:rp 
                                                  startAngle:angle2 
                                                    endAngle:angle6 
                                                   clockwise:YES];
@@ -238,23 +247,23 @@ static char BlobularViewObservationContext;
 				} else {
 				
                     // draw one single shape by connecting the various arc segments
-					[path appendBezierPathWithArcWithCenter:blob1.center 
-                                                     radius:blob1.radius 
+					[path appendBezierPathWithArcWithCenter:b1 
+                                                     radius:r1 
                                                  startAngle:rotate_angle(angle1) 
                                                    endAngle:rotate_angle(angle3) 
                                                   clockwise:NO];
 					[path appendBezierPathWithArcWithCenter:c2 
-                                                     radius:self.probeRadius 
+                                                     radius:rp 
                                                  startAngle:angle3 
                                                    endAngle:angle4 
                                                   clockwise:YES];
-					[path appendBezierPathWithArcWithCenter:blob2.center 
-                                                     radius:blob2.radius 
+					[path appendBezierPathWithArcWithCenter:b2 
+                                                     radius:r2 
                                                  startAngle:rotate_angle(angle4) 
                                                    endAngle:rotate_angle(angle2) 
                                                   clockwise:NO];
 					[path appendBezierPathWithArcWithCenter:c1 
-                                                     radius:self.probeRadius 
+                                                     radius:rp 
                                                  startAngle:angle2 
                                                    endAngle:angle1 
                                                   clockwise:YES];
@@ -277,10 +286,10 @@ static char BlobularViewObservationContext;
 		
 		// if the circle is not connected draw a single circle
 		if (!connected) {
-			NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(blob1.center.x - blob1.radius, 
-                                                                                   blob1.center.y - blob1.radius, 
-                                                                                   2.0f * blob1.radius, 
-                                                                                   2.0f * blob1.radius)];
+			NSBezierPath *path = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(b1.x - r1, 
+                                                                                   b1.y - r1, 
+                                                                                   2.0f * r1, 
+                                                                                   2.0f * r1)];
 		
 			[fillColor set];
 			[path fill];
@@ -308,8 +317,6 @@ static char BlobularViewObservationContext;
                               context:context];
         return;
     }
-    
-    NSLog(@"keyPath: %@, value: %f", keyPath, self.probeRadius);
     
     if ([keyPath isEqualToString:@"probeRadius"]) {
         [self setNeedsDisplay:YES];
